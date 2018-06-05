@@ -4,7 +4,7 @@ import re
 import asana
 
 from typing import Any, Match
-from zulip_bots.bots.asanabot.utils import *
+from utils import *
 
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -33,7 +33,7 @@ class AsanabotHandler(object):
         except asana.error.InvalidTokenError as e:
             bot_handler.quit(str(e))
         except ConnectionError as e:
-            bot_response = "Sorry, unable to contact Asana, check your internet connection."
+            bot_response = 'Sorry, unable to contact Asana, check your internet connection.'
         except asana.error.NotFoundError as e:
             bot_response = str(e)
         bot_handler.send_reply(message, bot_response)
@@ -59,7 +59,7 @@ class AsanabotHandler(object):
             if query_match:
                 return HELP_TEXT[key]
 
-        return "Sorry, no match of your query found. You can ask for help by `@**asanabot** help`"
+        return 'Sorry, no match of your query found. You can ask for help by `@**asanabot** help`'
 
     def query_user(self, key: str, match: Match[str]) -> str:
         if key == 'about_user':
@@ -69,7 +69,7 @@ class AsanabotHandler(object):
             user_workspaces = ''
             for workpace in get_user['workspaces']:
                 user_workspaces += (
-                    "| {} | {} |\n"
+                    '| {} | {} |\n'
                 ).format(workpace['id'], workpace['name'])
             response = (
                 '- **User Name**: `{}`,\n'
@@ -82,10 +82,10 @@ class AsanabotHandler(object):
             workspace_id = match.group('workspace_id')
             get_users = self.client.users.find_by_workspace(workspace_id)
 
-            response = "| User id  | Name |\n| ------------- | ------------- |\n"
+            response = '| User id  | Name |\n| ------------- | ------------- |\n'
             for user in get_users:
                 response += (
-                    "| {} | {} |\n"
+                    '| {} | {} |\n'
                 ).format(user['id'], user['name'])
 
         return response
@@ -93,12 +93,13 @@ class AsanabotHandler(object):
     def query_project(self, key: str, match: Match[str]) -> str:
         if key == 'create_in_workspace':
             workspace_id = match.group('workspace_id')
-            project_name = match.group('project_name')
+            project_name = match.group('project_name').strip()
             project = self.client.projects.create_in_workspace(
                 workspace_id, {'name': project_name}
             )
 
             response = (
+                'Project successfully created :tada:'
                 '- **Project Name**: `{}`,\n'
                 '- **Id**: `{}`,\n'
                 '- **Owner**: `{}`,\n'
@@ -111,18 +112,19 @@ class AsanabotHandler(object):
         elif key == 'add_members':
             project_id = match.group('project_id')
             user_ids = match.group('user_ids')
-            id_re = re.compile('"(?P<user_id>.+?)"')
-            add_users = id_re.findall(user_ids)
+            add_users = [user_id.strip() for user_id in user_ids.split(',')]
+            # TODO: If user_id don't belong to existing member of workspace
+            # this fails to add any member, so add "try..except" and
+            # improve multiple user handling
             get_response = self.client.projects.add_members(
                 project_id, {'members': add_users})
-
             response = (
                 'Updated members of project `{}`\n\n'
                 '| User id  | Name |\n| ------------- | ------------- |\n'
             ).format(get_response['name'])
             for user in get_response['members']:
                 response += (
-                    "| {} | {} |\n"
+                    '| {} | {} |\n'
                 ).format(user['id'], user['name'])
 
         return response
@@ -143,17 +145,17 @@ class AsanabotHandler(object):
             self.client.workspaces.add_user(workspace_id, {'user': user_id})
 
             response = (
-                "**User**: `{}`, is successfully invited to **workspace**: `{}`"
+                '**User**: `{}`, is successfully invited to **workspace**: `{}`'
             ).format(user_id, workspace_id)
 
         elif key == 'show_workspaces':
             get_workspaces = self.client.workspaces.find_all()
             workspaces = list(get_workspaces)
 
-            response = "| Workspace id  | Name |\n| ------------- | ------------- |\n"
+            response = '| Workspace id  | Name |\n| ------------- | ------------- |\n'
             for workspace in workspaces:
                 response += (
-                    "| {} | {} |\n"
+                    '| {} | {} |\n'
                 ).format(workspace['id'], workspace['name'])
 
         return response
