@@ -1,0 +1,4 @@
+{
+    "python.pythonPath": "${workspaceFolder}/zulip-api-py3-venv/bin/python",
+    "python.linting.pylintEnabled": false
+}
